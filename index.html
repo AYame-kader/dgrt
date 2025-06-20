@@ -1,0 +1,115 @@
+<!DOCTYPE html>
+<html lang="fr">
+    <head>
+        <meta charset="UTF-8">
+        <meta name="viewport" content="width=device-width, initial-scale=1.0">
+        <title>Ultra surveillance</title>
+        <link rel="stylesheet" href="https://unpkg.com/leaflet/dist/leaflet.css" />
+        <link rel="stylesheet" href="{{ url_for('static', filename='Docs.css') }}">
+        <link rel="icon" type="image/png" href="./static/images/imf.png">
+    </head>
+    <body class="global" style="margin: 0px;"></script>
+        <script src="https://cdnjs.cloudflare.com/ajax/libs/socket.io/4.3.2/socket.io.js"></script>
+        <script src="https://cdn.socket.io/4.0.1/socket.io.min.js"></script>
+        <script src="https://js.pusher.com/7.0/pusher.min.js"></script>
+        <img src="./static/images/imf.png" alt="camera de surveillance" width="50" height="50">
+        <div class="containe" style=" background-color: rgba(0, 0, 0, 0.5); width: 1000px; margin: 60px; padding: 30px; display: flex; gap: 20px;">
+             <div class="liste-container" style="padding: 10px; border-radius: 10px; background: rgb(200, 199, 199); width: 450px; height: 330px; font-family: 'Franklin Gothic Medium', 'Arial Narrow', Arial, sans-serif;">
+                    <script>
+                        const socket = io("http://localhost:5000", {
+                            transports: ["websocket"]  // Force WebSockets au lieu de polling
+                        });
+
+                        socket.on("mise_a_jour", function(etats) {
+                            let table = "";
+                            for (const [nom, statut] of Object.entries(etats)) {
+                                let classe = statut.includes("En ligne") ? "en-ligne" : "hors-ligne";
+                                table += `<tr class="${classe}"><td>${nom}</td><td>${statut}</td></tr>`;
+                            }
+                            document.getElementById("tableau-pylones").innerHTML = table;
+                        });
+                    </script>
+                    <script>
+                    socket.on("response", (data) => {
+                        console.log("Réponse du serveur :", data);
+                    });
+
+                    function envoyerMessage() {
+                        socket.emit("message", "Salut Flask-SocketIO !");
+                    }
+                    </script>
+                    <table id="tableau-pylones">
+                        <tr><th>Pylône</th><th>Statut</th></tr>
+                    </table>
+                </div>
+
+                <div>
+                    <script>
+                        socket.on("mise_a_jour", function(etats) {
+                            let alerteVisible = false;
+                            for (const statut of Object.values(etats)) {
+                                if (statut.includes("Hors ligne")) {
+                                    alerteVisible = true;
+                                }
+                            }
+                            document.getElementById("alerte").style.display = alerteVisible ? "block" : "none";
+                        });
+                    </script>
+
+                    <script>
+                        var pusher = new Pusher("TA_CLE_API", { cluster: "TON_CLUSTER" });
+
+                        var channel = pusher.subscribe("alerte-channel");
+                        channel.bind("pylone-hors-ligne", function(data) {
+                            alert(data.message);
+                        });
+                    </script>
+                </div>
+                 <div id="map" style="height: 350px; width: 450px; border-radius: 10px;"> </div>  
+                <script src="https://unpkg.com/leaflet/dist/leaflet.js"></script>
+                <script>
+                    var map = L.map("map").setView([12.6390114, -7.9971594], 12);
+
+                    L.tileLayer("https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png", {
+                        attribution: '&copy; OpenStreetMap contributors'
+                    }).addTo(map);
+
+                    var pylones = [
+                        { nom: "Pylône 1", lat: 12.6591137, lon: -7.9635423, statut: "🟢 En ligne" },
+                        { nom: "Pylône 2", lat: 12.637333, lon: -8.004568, statut: "🔴 Hors ligne" },
+                        { nom: "Pylône 1", lat: 12.6591137, lon: -7.9635423, statut: "🟢 En ligne" },
+                        { nom: "Pylône 2", lat: 12.637333, lon: -8.004568, statut: "🔴 Hors ligne" },
+                        { nom: "Pylône 2", lat: 12.6591137, lon: -7.9635423, statut: "🔴 Hors ligne" },
+                        { nom: "Pylône 3", lat: 12.637333, lon: -8.004568, statut: "🟢 En ligne" },
+                        { nom: "Pylône 3", lat: 12.637333, lon: -8.004568, statut: "🟢 En ligne" },
+                        { nom: "Pylône 3", lat: 12.632849, lon: -7.998283, statut: "🟢 En ligne" },
+                        { nom: "Pylône 3", lat: 12.632849, lon: -7.998283, statut: "🟢 En ligne" },
+                        { nom: "Pylône 3", lat: 12.6390114, lon: -7.9971594, statut: "🟢 En ligne" },
+                        { nom: "Pylône 3", lat: 12.6390114, lon: -7.9971594, statut: "🟢 En ligne" },
+                        { nom: "Pylône 3", lat: 12.6429404, lon: -7.9978950, statut: "🟢 En ligne" },
+                        { nom: "Pylône 3", lat: 12.6429404, lon: -7.9978950, statut: "🟢 En ligne" },
+                        { nom: "Pylône 3", lat: 12.632001, lon: -8.011331, statut: "🟢 En ligne" },
+                        { nom: "Pylône 3", lat:  12.632001, lon: -8.011331, statut: "🟢 En ligne" }
+                    ];
+
+                    pylones.forEach(function(pylone) {
+                        L.marker([pylone.lat, pylone.lon])
+                            .bindPopup(`<b>${pylone.nom}</b><br>${pylone.statut}`)
+                            .addTo(map);
+                    });
+                </script>
+             
+        </div>
+
+        <footer style="display: flex; gap: 20px;">
+            <p>&copy; 2025 MonSite. Tous droits réservés.</p>
+            <p>Contact : contact@monsite.com</p>
+            <p>Facebook : Laye Walker </p>
+            <p> Whatsapp : Laye_Tech </p>
+        </footer>
+    </body>  
+</html>
+
+
+
+
